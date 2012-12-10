@@ -1,3 +1,5 @@
+module WithN
+
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
@@ -6,6 +8,7 @@
 {-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -15,7 +18,7 @@ import           Prelude hiding (zipWith)
 import           Text.Printf
 
 instance Zip V.Vector where
-  zipWith = V.zipWith         
+  zipWith = V.zipWith
 
 
 -- type level, first-in first-out list, that contains only values of type (v a)
@@ -24,7 +27,7 @@ data Cons (v :: * -> *) a b = Cons a b deriving (Eq, Show)
 data Nil  (v :: * -> *)     = Nil      deriving (Eq, Show)
 
 
--- | the type-class states that if you insert 
+-- | the type-class states that if you insert
 --   (v a) into vxS, the resulting type is vyS
 class Insert v a vxS vyS | v a vxS -> vyS where
   insert :: v a -> vxS -> vyS
@@ -59,7 +62,7 @@ f_id_d n d = d^n
 --   as many time as possible, and return the results.
 class Reduce v f vxS result vyS | v f vxS -> result vyS where
   reduce :: v f -> vxS -> (result, vyS)
- 
+
 instance (Functor v) => Reduce v f (Nil v) (v f) (Nil v) where
   reduce vf Nil = (vf, Nil)
 
@@ -83,17 +86,13 @@ instance (Insert v b (vaS v a2 b2) vyS, PType vyS r) => PType (vaS v a2 b2) (v b
 
 
 instance (Zip v, Reduce v f0 vaS result (Nil v)) =>  PType (Cons v (v i)  vaS) ((i -> f0)->result) where
-  spr (Cons vi vaS) = (\f -> reduceFinal (fmap f vi) vaS)         
+  spr (Cons vi vaS) = (\f -> reduceFinal (fmap f vi) vaS)
 
 
 
 
--- forZN :: forall v r. PType (Nil v) r => r
--- forZN = spr (Nil :: Nil v)
-
--- forZN :: PType (Nil V.Vector) (V.Vector Double -> r) => V.Vector Double -> r
-forZN :: forall v r a.  PType (Cons v (v a) (Nil v)) r=> v a -> r
-forZN vx = spr (Cons vx (Nil :: Nil v) :: Cons v (v a) (Nil v))
+withNZip :: forall v r a.  PType (Cons v (v a) (Nil v)) r=> v a -> r
+withNZip vx = spr (Cons vx (Nil :: Nil v) :: Cons v (v a) (Nil v))
 
 main = do
   let args = insert vi1 $ insert vc1 $ insert vd1 (Nil :: Nil V.Vector)
@@ -104,5 +103,5 @@ main = do
   print $ reduceFinal vf1 args
 --  fromList ["1.1 X 100","1.4,Y,101","1.9-Z-102"]
 
-  print $ forZN vd1 vc1 vi1 f_dci_s 
+  print $ forZN vd1 vc1 vi1 f_dci_s
 --  fromList ["(1.1){X}[100]","(1.4){Y}[101]","(1.9){Z}[102]"]

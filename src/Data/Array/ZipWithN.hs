@@ -32,7 +32,7 @@
 --
 --    * http://hackage.haskell.org/packages/archive/TypeCompose/latest/doc/html/Data-Zip.html
 ----------------------------------------------------------------
-module Data.List.ZipWithN (ZipWithN(), zipWithN) where
+module Data.Array.ZipWithN (ZipWithN(), zipWithN) where
 
 import qualified Data.Key as K
 
@@ -61,7 +61,7 @@ instance (K.Zip f, ZipWithN f b gr kr) =>
 -- isn't terribly helpful or intuitive. The /real/ type signature
 -- is:
 --
--- > zipWithN :: {forall a}^N. ({a->}^N  r) -> ({[a]->}^N  r)
+-- > zipWithN :: {forall a}^N. ({a->}^N  r) -> ({f a ->}^N  r)
 --
 -- Note that the @a@ type variables are meta and so are independent
 -- from one another, despite being correlated in N across all
