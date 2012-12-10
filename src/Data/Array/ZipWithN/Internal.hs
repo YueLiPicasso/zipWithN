@@ -1,5 +1,3 @@
-module Data.Array.ZipWithN.Internal where
-
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
@@ -12,7 +10,9 @@ module Data.Array.ZipWithN.Internal where
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-import qualified Data.Key
+module Data.Array.ZipWithN.Internal where
+
+import qualified Data.Key as K
 import           Prelude hiding (zipWith)
 
 ----------------------------------------------------------------
@@ -48,13 +48,16 @@ instance (K.Zip f, ZipWithN f b gr kr) =>
 -- repetitions.
 --
 -- >>> let f i c d = c : show (i::Int) ++ " " ++ show (d::Double)
--- >>> zipWithN f [1 :: Int ..] "hoge" [1 :: Double ..] :: [String]
+-- >>> let xs = [1 :: Int ..]
+-- >>> let ys = "hoge"
+-- >>> let zs = [1 :: Double ..]
+-- >>> zipWithN f xs ys zs :: [String]
 -- ["h1 1.0","o2 2.0","g3 3.0","e4 4.0"]
 --
 -- >>> import qualified Data.Vector as V
 -- >>> instance K.Zip V.Vector where zipWith = V.zipWith
--- >>> let xs = V.fromList [1..10] :: V.Vector Int
--- >>> zipWithN (*) xs xs
+-- >>> let vx = V.fromList [1..10] :: V.Vector Int
+-- >>> zipWithN (*) vx vx
 -- fromList [1,4,9,16,25,36,49,64,81,100]
 
 zipWithN :: (ZipWithN f b gr kr)
@@ -94,8 +97,8 @@ class Reduce v f vxS result vyS | v f vxS -> result vyS where
 instance (Functor v) => Reduce v f (Nil v) (v f) (Nil v) where
   reduce vf Nil = (vf, Nil)
 
-instance (Zip v, Reduce v f vxS result vyS) => Reduce v (a->f) (Cons v (v a)  vxS) result vyS where
-  reduce vf (Cons va vxS) = reduce (zipWith ($) vf va) vxS
+instance (K.Zip v, Reduce v f vxS result vyS) => Reduce v (a->f) (Cons v (v a)  vxS) result vyS where
+  reduce vf (Cons va vxS) = reduce (K.zipWith ($) vf va) vxS
 
 reduceFinal :: Reduce v f vxS result (Nil v) => v f -> vxS -> result
 reduceFinal vf vxS = vr where (vr, Nil) = reduce vf vxS
@@ -113,10 +116,19 @@ instance (Insert v b (vaS v a2 b2) vyS, PType vyS r) => PType (vaS v a2 b2) (v b
   spr vaS = (\vb -> spr (insert vb vaS))
 
 
-instance (Zip v, Reduce v f0 vaS result (Nil v)) =>  PType (Cons v (v i)  vaS) ((i -> f0)->result) where
+instance (K.Zip v, Reduce v f0 vaS result (Nil v)) =>  PType (Cons v (v i)  vaS) ((i -> f0)->result) where
   spr (Cons vi vaS) = (\f -> reduceFinal (fmap f vi) vaS)
 
+-- | A variant of zipWithN that takes the zipping function as its last
+--   argument.
+--
+-- >>> let f i c d = c : show (i::Int) ++ " " ++ show (d::Double)
+-- >>> let xs = [1 :: Int ..]
+-- >>> let ys = "hoge"
+-- >>> let zs = [1 :: Double ..]
+-- >>> withNZip xs ys zs f
+-- ["h1 1.0","o2 2.0","g3 3.0","e4 4.0"]
 
 
-withNZip :: forall v r a . PType (Cons v (v a) (Nil v)) r=> v a -> r
+withNZip :: forall v r a. PType (Cons v (v a) (Nil v)) r=> v a -> r
 withNZip vx = spr (Cons vx (Nil :: Nil v) :: Cons v (v a) (Nil v))

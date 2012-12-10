@@ -4,7 +4,10 @@
 name:                zipWithN
 version:             0.1.0.0
 synopsis:            arity generic, container-generic zipWith.
--- description:         
+description:         arity generic, container-generic zipWithN and withNZip. 
+                     The former takes the zipper function as its first argument
+                     while the latter its last.
+
 homepage:            https://github.com/nushio3/zipWithN
 license:             BSD3
 license-file:        LICENSE
@@ -16,7 +19,7 @@ build-type:          Simple
 cabal-version:       >=1.8
 
 library
-  hs-source-dir:     src/
+  hs-source-dirs:    src/
   exposed-modules:   Data.Array.ZipWithN
                    , Data.Array.ZipWithN.Internal
   -- other-modules:       
