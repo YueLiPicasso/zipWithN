@@ -47,6 +47,7 @@ instance (K.Zip f, ZipWithN f b gr kr) =>
 -- from one another, despite being correlated in N across all
 -- repetitions.
 --
+-- >>> :set -XOverlappingInstances
 -- >>> let f i c d = c : show (i::Int) ++ " " ++ show (d::Double)
 -- >>> let xs = [1 :: Int ..]
 -- >>> let ys = "hoge"
@@ -122,6 +123,7 @@ instance (K.Zip v, Reduce v f0 vaS result (Nil v)) =>  PType (Cons v (v i)  vaS)
 -- | A variant of zipWithN that takes the zipping function as its last
 --   argument.
 --
+-- >>> :set -XOverlappingInstances
 -- >>> let f i c d = c : show (i::Int) ++ " " ++ show (d::Double)
 -- >>> let xs = [1 :: Int ..]
 -- >>> let ys = "hoge"
