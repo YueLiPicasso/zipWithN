@@ -16,8 +16,9 @@ build-type:          Simple
 cabal-version:       >=1.8
 
 library
-  hs-source-dir:       src/
-  exposed-modules:     Data.Array.ZipWithN
+  hs-source-dir:     src/
+  exposed-modules:   Data.Array.ZipWithN
+                   , Data.Array.ZipWithN.Internal
   -- other-modules:       
-  build-depends:       base >= 4.5 && <5.0
-                     , keys >= 0.3  
+  build-depends:     base >= 4.5 && <5.0
+                   , keys >= 0.3  

@@ -62,8 +62,6 @@ zipWithN :: (ZipWithN f b gr kr)
 zipWithN func xs = _zipWithN (fmap func xs)
 
 
-
-
 ----------------------------------------------------------------
 -- realm for withNZip
 ----------------------------------------------------------------
@@ -120,6 +118,5 @@ instance (Zip v, Reduce v f0 vaS result (Nil v)) =>  PType (Cons v (v i)  vaS) (
 
 
 
-
-withNZip :: forall v r a.  PType (Cons v (v a) (Nil v)) r=> v a -> r
+withNZip :: forall v r a . PType (Cons v (v a) (Nil v)) r=> v a -> r
 withNZip vx = spr (Cons vx (Nil :: Nil v) :: Cons v (v a) (Nil v))
