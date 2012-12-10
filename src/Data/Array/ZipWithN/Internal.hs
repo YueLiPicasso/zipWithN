@@ -1,4 +1,4 @@
-module WithN
+module Data.Array.ZipWithN.Internal where
 
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -12,13 +12,61 @@ module WithN
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-import qualified Data.Vector as V
-import           Data.Key (Zip(..))
+import qualified Data.Key
 import           Prelude hiding (zipWith)
-import           Text.Printf
 
-instance Zip V.Vector where
-  zipWith = V.zipWith
+----------------------------------------------------------------
+-- realm for zipWithN
+----------------------------------------------------------------
+
+
+-- | This class provides the necessary polymorphism. It is only
+-- exported for the sake of giving type signatures.
+--
+-- Because we can't do functor composition without a lot of noise
+-- from newtype wrappers, we use @gr@ and @kr@ to precompose the
+-- direct/list functor with the reader functor and the return type.
+class K.Zip f => ZipWithN f a gr kr | kr -> a gr where
+    _zipWithN :: f (a -> gr) -> f a -> kr
+
+instance (K.Zip f, f b ~ fb) => ZipWithN f a b fb where
+    _zipWithN = K.zipWith ($)
+
+instance (K.Zip f, ZipWithN f b gr kr) =>
+         ZipWithN f a (b -> gr) (f b -> kr) where
+    _zipWithN = (_zipWithN .) . K.zipWith ($)
+
+
+-- | Polyadic version of 'map'/'zipWith'. The given type signature
+-- isn't terribly helpful or intuitive. The /real/ type signature
+-- is:
+--
+-- > zipWithN :: {forall a}^N. ({a->}^N  r) -> ({f a ->}^N  r)
+--
+-- Note that the @a@ type variables are meta and so are independent
+-- from one another, despite being correlated in N across all
+-- repetitions.
+--
+-- >>> let f i c d = c : show (i::Int) ++ " " ++ show (d::Double)
+-- >>> zipWithN f [1 :: Int ..] "hoge" [1 :: Double ..] :: [String]
+-- ["h1 1.0","o2 2.0","g3 3.0","e4 4.0"]
+--
+-- >>> import qualified Data.Vector as V
+-- >>> instance K.Zip V.Vector where zipWith = V.zipWith
+-- >>> let xs = V.fromList [1..10] :: V.Vector Int
+-- >>> zipWithN (*) xs xs
+-- fromList [1,4,9,16,25,36,49,64,81,100]
+
+zipWithN :: (ZipWithN f b gr kr)
+            => (a -> b -> gr) -> f a -> f b -> kr
+zipWithN func xs = _zipWithN (fmap func xs)
+
+
+
+
+----------------------------------------------------------------
+-- realm for withNZip
+----------------------------------------------------------------
 
 
 -- type level, first-in first-out list, that contains only values of type (v a)
@@ -38,24 +86,6 @@ instance Insert v a (Nil v) (Cons v (v a) (Nil v)) where
 instance  (Insert v a vxS vyS) => Insert v a (Cons v (v x) vxS) (Cons v (v x) vyS) where
   insert va (Cons vb vbS) = (Cons vb $ insert va vbS)
 
-
-vi1 :: V.Vector Int
-vi1 = V.fromList [100..102]
-
-vc1 :: V.Vector Char
-vc1 = V.fromList ['X'..'Z']
-
-vd1 :: V.Vector Double
-vd1 = V.fromList [1.1, 1.4, 1.9]
-
-vf1 :: V.Vector (Double -> Char -> Int -> String)
-vf1 = V.fromList [printf "%f %c %d", printf "%f,%c,%d", printf "%f-%c-%d"]
-
-f_dci_s :: (Double -> Char -> Int -> String)
-f_dci_s = printf "(%f){%c}[%d]"
-
-f_id_d :: (Int -> Double -> Double)
-f_id_d n d = d^n
 
 
 -- | perfom functional applications inside the container,
@@ -93,15 +123,3 @@ instance (Zip v, Reduce v f0 vaS result (Nil v)) =>  PType (Cons v (v i)  vaS) (
 
 withNZip :: forall v r a.  PType (Cons v (v a) (Nil v)) r=> v a -> r
 withNZip vx = spr (Cons vx (Nil :: Nil v) :: Cons v (v a) (Nil v))
-
-main = do
-  let args = insert vi1 $ insert vc1 $ insert vd1 (Nil :: Nil V.Vector)
-
-  print $ args
---  Cons (fromList [1.1,1.4,1.9]) (Cons (fromList "XYZ") (Cons (fromList [100,101,102]) Nil))
-
-  print $ reduceFinal vf1 args
---  fromList ["1.1 X 100","1.4,Y,101","1.9-Z-102"]
-
-  print $ forZN vd1 vc1 vi1 f_dci_s
---  fromList ["(1.1){X}[100]","(1.4){Y}[101]","(1.9){Z}[102]"]
